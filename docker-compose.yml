@@ -1,13 +1,37 @@
-# Entwicklungsdatenbank für den Gemeinschafts-Atlas.
+# Der Stack des Gemeinschafts-Atlas.
 #
-# Startet nur, was zum Entwickeln fehlt. Die Anwendung selbst läuft daneben auf
-# dem Host (`cd app && npm run dev`) — deployt wird sie als Node-Prozess über
-# pm2, und ein zweiter Startweg im Container würde nur auseinanderlaufen.
+# Diese Datei beschreibt den produktionsnahen Zustand: die App als gebautes
+# Artefakt. `docker compose up` zieht lokal zusätzlich docker-compose.override.yml
+# und ersetzt die App durch den Dev-Server mit Hot Reload — die Override-Datei
+# wird automatisch gemerged, ohne sie zu nennen.
 #
-#   docker compose up -d        Datenbank hochfahren
-#   docker compose down         anhalten, Daten bleiben
-#   docker compose down -v      anhalten und Daten wegwerfen
+#   docker compose up -d                      Entwicklung (mit Override)
+#   docker compose -f docker-compose.yml up   produktionsnah, ohne Override
+#   docker compose down                       anhalten, Daten bleiben
+#   docker compose down -v                    anhalten und Daten wegwerfen
 services:
+  app:
+    # Der Name ist bewusst kein existierendes Repository: sonst zieht Compose
+    # das Image von dort, statt es hier aus dem Dockerfile zu bauen.
+    image: webcraftmedia/gemeinschafts-atlas:local-production
+    build:
+      context: ./app
+      target: production
+    restart: unless-stopped
+    ports:
+      # 3000 belegt auf dieser Maschine schon ein anderes Projekt, und der
+      # Host-Dev-Server (`cd app && npm run dev`) will es ebenfalls. Der
+      # Container bekommt deshalb einen eigenen Port — über APP_PORT
+      # verschiebbar, im Container bleibt es 3000.
+      - "127.0.0.1:${APP_PORT:-3002}:3000"
+    environment:
+      NODE_ENV: production
+      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost:3002}
+      NUXT_PUBLIC_CONTACT_EMAIL: ${NUXT_PUBLIC_CONTACT_EMAIL:-kontakt@gemeinschafts-atlas.de}
+    # Kein depends_on auf postgres: die Anwendung spricht noch nicht mit der
+    # Datenbank. Die Kopplung kommt, wenn es Datenzugriff gibt — vorher wäre
+    # sie eine Behauptung.
+
   postgres:
     # PostGIS statt nacktem Postgres: ein Atlas ist Geodaten. Umkreissuche,
     # Bounding-Box-Abfragen fürs Kartenfenster und Marker-Clustering sind hier

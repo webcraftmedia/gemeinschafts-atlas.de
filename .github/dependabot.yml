@@ -31,11 +31,18 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 99
 
-  # Die Entwicklungsdatenbank in docker-compose.yml. Läuft nie in Produktion,
-  # aber ein Postgres-Minor, den hier niemand mitnimmt, ist genau die Art von
-  # Drift, die später als "bei mir lief es" auffällt.
+  # Die Images in docker-compose.yml (PostGIS). Ein Postgres-Minor, den hier
+  # niemand mitnimmt, ist genau die Art von Drift, die später als "bei mir lief
+  # es" auffällt.
   - package-ecosystem: "docker-compose"
     directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 99
+
+  # Das Basis-Image in app/Dockerfile.
+  - package-ecosystem: "docker"
+    directory: "/app"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 99

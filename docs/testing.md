@@ -18,9 +18,29 @@ Alle Kommandos laufen in `app/`.
 | `npm run test:e2e:ui` | Playwright im UI-Modus |
 | `npm run test:e2e:a11y:update` | axe-Baseline neu schreiben (nur nach beabsichtigter Änderung) |
 
-Jedes Gate hat einen eigenen Workflow unter `.github/workflows/app.test.*.yml`,
-jeweils mit vorgeschaltetem `paths-filter`-Job, damit Änderungen außerhalb von
-`app/` keine Läufe auslösen.
+Dazu kommt ein Gate, das vom Repo-Wurzelverzeichnis aus läuft:
+
+| Kommando | Was es tut |
+| --- | --- |
+| `docker compose -f docker-compose.yml build` | Baut das `production`-Image |
+| `docker compose build` | Baut das `development`-Image (mit Override) |
+
+Jedes Gate hat einen eigenen Workflow unter `.github/workflows/`, jeweils mit
+vorgeschaltetem `paths-filter`-Job, damit unbeteiligte Änderungen keine Läufe
+auslösen.
+
+## Warum das Docker-Gate mehr macht als bauen
+
+`docker.test.build.yml` baut nicht nur beide Targets, sondern startet den
+Produktions-Stack und wartet mit `--wait` darauf, dass der Container seinen
+eigenen `HEALTHCHECK` besteht — der fragt `/api/health`. Ein Image, das baut,
+startet und sofort stirbt, fällt damit hier auf und nicht erst auf einem Server.
+Anschließend wird eine Seite abgerufen und auf ein `<h1>` geprüft, damit auch
+ein Container auffliegt, der zwar antwortet, aber nichts rendert.
+
+Das `development`-Target bekommt einen eigenen Job, weil es der einzige ist, den
+sonst nichts in der Pipeline anfasst — und gleichzeitig der, den ein neuer
+Mitentwickler als Erstes trifft.
 
 ## Coverage: 100 %, ab Tag eins
 

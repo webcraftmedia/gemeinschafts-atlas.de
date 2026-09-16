@@ -1,0 +1,31 @@
+# Lokale Entwicklung. Compose merged diese Datei automatisch über
+# docker-compose.yml — ein `docker compose up` bekommt sie also immer, ein
+# `docker compose -f docker-compose.yml up` nie.
+services:
+  app:
+    image: webcraftmedia/gemeinschafts-atlas:local-development
+    build:
+      target: development
+    environment:
+      NODE_ENV: development
+    ports:
+      - "127.0.0.1:${APP_PORT:-3002}:3000"
+      # Vites HMR-Websocket. Ohne diesen Port lädt die Seite, aber jede
+      # Änderung erfordert einen manuellen Reload — und die Ursache steht nur
+      # in der Browser-Konsole.
+      - "127.0.0.1:${HMR_PORT:-24678}:24678"
+    volumes:
+      # Quellcode vom Host, damit Änderungen sofort ankommen.
+      - ./app:/app
+      # Diese beiden *müssen* eigene Volumes sein und dürfen nicht vom Host
+      # kommen:
+      #   node_modules — esbuild und unrs-resolver bringen native Binaries mit.
+      #     Host ist glibc, das Image musl; ein geteiltes Verzeichnis hat immer
+      #     für eine der beiden Seiten die falschen.
+      #   .nuxt        — enthält absolute Pfade der Umgebung, die es erzeugt hat.
+      - app-node-modules:/app/node_modules
+      - app-nuxt:/app/.nuxt
+
+volumes:
+  app-node-modules:
+  app-nuxt:

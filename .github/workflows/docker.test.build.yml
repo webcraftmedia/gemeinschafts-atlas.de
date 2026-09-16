@@ -1,0 +1,75 @@
+name: "docker:test:build both image targets"
+
+on: push
+
+jobs:
+  # only (but most important) job from this workflow required for pull requests
+  # check results serve as run conditions for all other jobs here
+  files-changed:
+    name: Detect File Changes - docker-test-build
+    runs-on: ubuntu-latest
+    outputs:
+      changes: ${{ steps.changes.outputs.filter }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.1.7
+
+      - name: Check for relevant file changes
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: changes
+        with:
+          token: ${{ github.token }}
+          filters: |
+            filter:
+              - 'app/**/*'
+              - 'docker-compose.yml'
+              - 'docker-compose.override.yml'
+              - '.github/workflows/*'
+          list-files: shell
+
+  build-production:
+    if: needs.files-changed.outputs.changes == 'true'
+    name: Build Docker Production
+    needs: files-changed
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.1.7
+
+      - name: Build Docker Production
+        run: docker compose -f docker-compose.yml build
+
+      # Building is not the claim worth checking — starting is. `--wait` blocks
+      # on the image's own HEALTHCHECK, which polls /api/health, so a container
+      # that comes up and immediately dies fails here instead of on a server.
+      - name: Start the stack and wait for it to report healthy
+        run: docker compose -f docker-compose.yml up -d --wait
+
+      - name: App | Serves a server-rendered page
+        run: |
+          curl --fail --silent --show-error http://127.0.0.1:3002/api/health
+          curl --fail --silent --show-error http://127.0.0.1:3002/ | grep -q '<h1'
+
+      - name: Container logs
+        if: always()
+        run: docker compose -f docker-compose.yml logs --no-color
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.yml down -v
+
+  build-development:
+    if: needs.files-changed.outputs.changes == 'true'
+    name: Build Docker Development
+    needs: files-changed
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.1.7
+
+      # `docker compose build` without -f picks up docker-compose.override.yml
+      # and therefore the development target — the one a new contributor hits
+      # first, and the one nothing else in the pipeline ever touches.
+      - name: Build Docker Development
+        run: docker compose build

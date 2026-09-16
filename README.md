@@ -7,8 +7,10 @@ Lebens. Nuxt 4 mit SSR, Deployment als Node-Prozess hinter einem Reverse Proxy.
 
 ```
 .
-├── docker-compose.yml      Entwicklungsdatenbank (PostGIS)
+├── docker-compose.yml          Stack: App (gebaut) + PostGIS
+├── docker-compose.override.yml Lokal: App als Dev-Server mit Hot Reload
 ├── app/                    Die Anwendung (Nuxt-Projekt)
+│   ├── Dockerfile          Mehrstufig: development / build / production
 │   ├── app/                Vue-Ebene: app.vue, pages/, components/, assets/
 │   ├── server/             Nitro: API-Routen
 │   ├── locales/            Übersetzungen (de.json)
@@ -31,8 +33,23 @@ Versehen.
 Voraussetzung: Node in der Version aus `app/.tool-versions` (derzeit 26.8.1),
 sowie `jq` für das Locales-Gate.
 
+Es gibt zwei gleichwertige Wege, die App zu starten. Beide funktionieren, beide
+werden in der CI gebaut — such dir einen aus.
+
+**Alles im Container** (nichts außer Docker nötig):
+
 ```sh
-docker compose up -d           # PostGIS auf 127.0.0.1:5433
+docker compose up -d           # App auf 127.0.0.1:3002, PostGIS auf 5433
+docker compose logs -f app
+```
+
+Der Quellcode ist eingebunden, Hot Reload funktioniert. Der erste Start dauert
+länger, weil im Container einmal `npm install` in ein leeres Volume läuft.
+
+**App auf dem Host, nur die Datenbank im Container** (schnellere Iteration):
+
+```sh
+docker compose up -d postgres  # PostGIS auf 127.0.0.1:5433
 
 cd app
 cp .env.template .env
@@ -40,9 +57,17 @@ npm ci
 npm run dev                    # http://localhost:3000
 ```
 
-Die Anwendung läuft bewusst auf dem Host und nicht im Container: deployt wird
-sie als Node-Prozess über pm2, und ein zweiter Startweg im Container würde davon
-auseinanderlaufen. Im Compose steht nur, was zum Entwickeln sonst fehlt.
+Beides gleichzeitig geht auch — deshalb hat der Container Port 3002 und nicht
+3000. `node_modules` und `.nuxt` liegen im Container in eigenen Volumes und
+nicht im bind-gemounteten Quellcode; das ist keine Optimierung, sondern nötig:
+`esbuild` und `unrs-resolver` bringen native Binaries mit, und der Host ist
+glibc, das Image musl. Ein geteiltes Verzeichnis hätte für eine der beiden
+Seiten immer die falschen.
+
+Deployt wird derzeit weiterhin als Node-Prozess über pm2 auf dem Host, nicht als
+Container — siehe [Deployment](#deployment). Das `production`-Target im
+Dockerfile ist damit heute vor allem ein Prüfstein in der CI; es ist aber
+vollständig und lauffähig, falls du den Deploy später umstellen willst.
 
 ### Datenbank
 

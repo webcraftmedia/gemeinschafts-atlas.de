@@ -1,0 +1,33 @@
+# Everything here would either be rebuilt inside the image or has no business
+# in it. Without this, `COPY . .` drags several hundred MB of node_modules and
+# build output into the context and the layer cache never hits.
+
+# Node dependencies — reinstalled from the lockfile inside the image, and the
+# host's copies carry glibc binaries this musl image cannot use.
+node_modules
+
+# Nuxt dev/build outputs
+.nuxt
+.output
+.nitro
+.cache
+dist
+
+# Test artifacts
+coverage
+playwright-report
+test-results
+
+# Local env files — secrets have no place in an image layer
+.env
+.env.*
+!.env.template
+
+# Logs
+logs
+*.log
+
+# Misc
+.DS_Store
+.fleet
+.idea
