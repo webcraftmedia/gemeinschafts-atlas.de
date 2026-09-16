@@ -1,6 +1,9 @@
 # Guard: npm run from the repo root instead of app/ would land here
 node_modules/
 
+# Local overrides for docker-compose.yml (DB_PORT, credentials)
+.env
+
 # Server logs pulled in for analysis — never part of the repo
 logs/
 *.log

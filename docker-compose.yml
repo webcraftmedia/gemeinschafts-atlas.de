@@ -1,0 +1,46 @@
+# Entwicklungsdatenbank für den Gemeinschafts-Atlas.
+#
+# Startet nur, was zum Entwickeln fehlt. Die Anwendung selbst läuft daneben auf
+# dem Host (`cd app && npm run dev`) — deployt wird sie als Node-Prozess über
+# pm2, und ein zweiter Startweg im Container würde nur auseinanderlaufen.
+#
+#   docker compose up -d        Datenbank hochfahren
+#   docker compose down         anhalten, Daten bleiben
+#   docker compose down -v      anhalten und Daten wegwerfen
+services:
+  postgres:
+    # PostGIS statt nacktem Postgres: ein Atlas ist Geodaten. Umkreissuche,
+    # Bounding-Box-Abfragen fürs Kartenfenster und Marker-Clustering sind hier
+    # indizierte Standardoperationen (GiST auf `geography`) statt Handarbeit.
+    # Das Image legt die Extension beim ersten Start selbst in POSTGRES_DB an.
+    image: postgis/postgis:17-3.5-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-atlas}
+      POSTGRES_USER: ${DB_USER:-atlas}
+      # Entwicklungswert, bewusst im Repo. Produktion läuft nicht über diese
+      # Datei, sondern über app/.env auf dem Server.
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-atlas}
+    ports:
+      # Nur auf Loopback. Ohne die 127.0.0.1 davor bindet Docker auf allen
+      # Interfaces und hängt die Datenbank am Netz — auch an einem, in dem du
+      # sie nicht erwartest.
+      # Nicht der Standardport 5432, damit eine System-Postgres oder ein
+      # anderes Projekt nicht kollidiert; über DB_PORT verschiebbar.
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
+    volumes:
+      # Benanntes Volume, kein Bind-Mount: ein `./data`-Mount legt ein
+      # root-eigenes Verzeichnis im Repo an, das weder .gitignore noch `rm`
+      # ohne sudo wieder loswird.
+      - postgres-data:/var/lib/postgresql/data
+    # Postgres' Parallel-Query braucht mehr Shared Memory als Dockers 64 MB.
+    shm_size: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-atlas} -d ${DB_DATABASE:-atlas}"]
+      start_period: 20s
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:

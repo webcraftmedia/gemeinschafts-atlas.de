@@ -7,6 +7,7 @@ Lebens. Nuxt 4 mit SSR, Deployment als Node-Prozess hinter einem Reverse Proxy.
 
 ```
 .
+├── docker-compose.yml      Entwicklungsdatenbank (PostGIS)
 ├── app/                    Die Anwendung (Nuxt-Projekt)
 │   ├── app/                Vue-Ebene: app.vue, pages/, components/, assets/
 │   ├── server/             Nitro: API-Routen
@@ -31,11 +32,40 @@ Voraussetzung: Node in der Version aus `app/.tool-versions` (derzeit 26.8.1),
 sowie `jq` für das Locales-Gate.
 
 ```sh
+docker compose up -d           # PostGIS auf 127.0.0.1:5433
+
 cd app
 cp .env.template .env
 npm ci
 npm run dev                    # http://localhost:3000
 ```
+
+Die Anwendung läuft bewusst auf dem Host und nicht im Container: deployt wird
+sie als Node-Prozess über pm2, und ein zweiter Startweg im Container würde davon
+auseinanderlaufen. Im Compose steht nur, was zum Entwickeln sonst fehlt.
+
+### Datenbank
+
+PostGIS statt nacktem PostgreSQL, weil ein Atlas Geodaten sind: Umkreissuche,
+Bounding-Box-Abfragen fürs Kartenfenster und Marker-Clustering sind dort
+indizierte Standardoperationen statt Handarbeit. Das weicht von jahrweiser und
+kooperative ab — an dieser Stelle begründet.
+
+```sh
+docker compose up -d           # hochfahren
+docker compose down            # anhalten, Daten bleiben
+docker compose down -v         # anhalten und Daten wegwerfen
+psql postgres://atlas:atlas@127.0.0.1:5433/atlas
+```
+
+Die Zugangsdaten stehen absichtlich im Repo: sie gelten nur für diese lokale
+Instanz, die ausschließlich auf Loopback lauscht. Produktion konfiguriert sich
+über `app/.env` auf dem Server. Der Port ist 5433 statt 5432, damit eine
+System-Postgres nicht kollidiert; verschiebbar über `DB_PORT` in einer `.env`
+im Repo-Wurzelverzeichnis.
+
+Angebunden ist die Datenbank noch nicht — es gibt weder Schema noch
+Datenzugriff. `DATABASE_URL` liegt auskommentiert in `app/.env.template` bereit.
 
 Für die E2E-Suite einmalig den Browser holen:
 

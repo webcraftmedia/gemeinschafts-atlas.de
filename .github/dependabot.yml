@@ -30,3 +30,12 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 99
+
+  # Die Entwicklungsdatenbank in docker-compose.yml. Läuft nie in Produktion,
+  # aber ein Postgres-Minor, den hier niemand mitnimmt, ist genau die Art von
+  # Drift, die später als "bei mir lief es" auffällt.
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 99
