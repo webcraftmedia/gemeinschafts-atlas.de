@@ -2,7 +2,7 @@
   import type { Map as MapLibreMap } from 'maplibre-gl'
   import type { Community } from '~/data/communities'
 
-  import { GERMANY_BOUNDS } from '~/data/communities'
+  import { GERMANY_BOUNDS, MAP_MAX_BOUNDS } from '~/data/communities'
   import { paperAndInkStyle } from '~/utils/mapStyle'
 
   /**
@@ -53,11 +53,12 @@
       container: container.value,
       style: paperAndInkStyle({ tilesUrl, glyphsUrl }),
       bounds: GERMANY_BOUNDS,
-      fitBoundsOptions: { padding: 40 },
-      // Hält die Karte bei Deutschland: außerhalb gibt es keine Einträge, und
-      // wer versehentlich über den Atlantik scrollt, findet selten zurück.
-      maxBounds: GERMANY_BOUNDS,
-      minZoom: 4.5,
+      fitBoundsOptions: { padding: 24 },
+      // Hält die Karte in der Gegend: außerhalb gibt es keine Einträge, und wer
+      // versehentlich über den Atlantik scrollt, findet selten zurück. Bewusst
+      // der weitere Rahmen — siehe MAP_MAX_BOUNDS.
+      maxBounds: MAP_MAX_BOUNDS,
+      minZoom: 4,
       maxZoom: 14,
       // Die Karte ist eine Übersicht, keine Navigation — Drehen und Kippen
       // bringen nichts und verlieren nur die Orientierung.
@@ -67,6 +68,15 @@
     })
 
     map.addControl(new maplibre.NavigationControl({ showCompass: false }), 'bottom-right')
+
+    // Noch einmal einpassen, sobald die Karte steht. Beim Konstruieren hat der
+    // Container seine endgültige Größe oft noch nicht, und MapLibre passt zwar
+    // die Leinwand an, wiederholt den Fit aber nicht — sichtbar daran, dass der
+    // Süden Deutschlands unten abgeschnitten war. Ohne Animation, damit die
+    // Seite nicht beim Öffnen zu wackeln anfängt.
+    map.once('load', () => {
+      map?.fitBounds(GERMANY_BOUNDS, { padding: 24, animate: false })
+    })
 
     for (const community of props.communities) {
       const element = document.createElement('div')

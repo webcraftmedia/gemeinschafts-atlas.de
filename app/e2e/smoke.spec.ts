@@ -61,6 +61,28 @@ test.describe('the deployed app', () => {
     await expect(imprint).toHaveAttribute('rel', 'noopener noreferrer')
   })
 
+  test('actually renders map tiles, not just a canvas', async ({ page }) => {
+    const failed: string[] = []
+    const tiles: number[] = []
+    page.on('requestfailed', (request) => failed.push(request.url()))
+    page.on('response', (response) => {
+      if (response.url().includes('.pbf')) tiles.push(response.status())
+    })
+
+    await page.goto('/karte')
+    await expect(page.locator('.maplibregl-canvas')).toBeVisible()
+    await expect(page.locator('.atlas-marker').first()).toBeVisible()
+    await page.waitForResponse((response) => response.url().includes('.pbf'), { timeout: 30_000 })
+
+    // Der Grund für diesen Test: Ein vorheriger Stand hatte Canvas *und* Marker,
+    // aber keine Karte — MapLibres Worker wurde vom Bundler nie ausgegeben, und
+    // ohne ihn dekodiert niemand die Vector Tiles. Ein Test, der nur nach dem
+    // Canvas sieht, war grün. Deshalb wird hier das Netz befragt.
+    expect(failed).toEqual([])
+    expect(tiles.length).toBeGreaterThan(0)
+    expect(tiles.every((status) => status === 200)).toBe(true)
+  })
+
   test('answers the health probe', async ({ request }) => {
     const response = await request.get('/api/health')
 

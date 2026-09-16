@@ -27,8 +27,14 @@ vi.mock(import('maplibre-gl'), () => {
     NavigationControl: vi.fn(function () {
       return {}
     }),
+    setWorkerUrl: vi.fn(),
   }
 })
+// Das Worker-Asset ist ein Vite-Konstrukt (?worker&url) und existiert unter
+// vitest nicht — die URL wird gebraucht, aber nie aufgerufen.
+vi.mock(import('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'), () => ({
+  default: '/maplibre-gl-worker.js',
+}))
 vi.mock(import('maplibre-gl/dist/maplibre-gl.css'), () => ({}))
 
 describe('karte page', () => {

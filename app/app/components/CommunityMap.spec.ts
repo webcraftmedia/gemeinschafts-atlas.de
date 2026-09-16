@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 import CommunityMap from './CommunityMap.vue'
 
-import { communities, GERMANY_BOUNDS } from '~/data/communities'
+import { communities, GERMANY_BOUNDS, MAP_MAX_BOUNDS } from '~/data/communities'
 
 /**
  * MapLibre braucht WebGL, das happy-dom nicht hat — die Bibliothek wird deshalb
@@ -13,7 +13,16 @@ import { communities, GERMANY_BOUNDS } from '~/data/communities'
  * je Gemeinschaft, und ob die Karte beim Verlassen der Seite wieder abgeräumt
  * wird. Genau das sind die Stellen, an denen wir Fehler machen können.
  */
-const mapInstance = vi.hoisted(() => ({ addControl: vi.fn(), remove: vi.fn() }))
+const mapInstance = vi.hoisted(() => ({
+  addControl: vi.fn(),
+  remove: vi.fn(),
+  fitBounds: vi.fn(),
+  // `once` ruft den Handler sofort auf — im Test ist "die Karte ist geladen"
+  // kein Warten wert, und so lässt sich prüfen, was danach passiert.
+  once: vi.fn((_event: string, handler: () => void) => {
+    handler()
+  }),
+}))
 const markerInstance = vi.hoisted(() => {
   const marker = {
     setLngLat: vi.fn(() => marker),
@@ -57,6 +66,12 @@ vi.mock(import('maplibre-gl'), () => ({
   Marker: MarkerMock,
   Popup: PopupMock,
   NavigationControl: NavigationControlMock,
+  setWorkerUrl: vi.fn(),
+}))
+// Das Worker-Asset ist ein Vite-Konstrukt (?worker&url) und existiert unter
+// vitest nicht — die URL wird gebraucht, aber nie aufgerufen.
+vi.mock(import('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'), () => ({
+  default: '/maplibre-gl-worker.js',
 }))
 vi.mock(import('maplibre-gl/dist/maplibre-gl.css'), () => ({}))
 
@@ -80,7 +95,18 @@ describe('CommunityMap', () => {
     expect(options.bounds).toStrictEqual(GERMANY_BOUNDS)
     // maxBounds, nicht nur der Startausschnitt: sonst scrollt man heraus und
     // steht vor leerem Raum, in dem es ohnehin keine Einträge gibt.
-    expect(options.maxBounds).toStrictEqual(GERMANY_BOUNDS)
+    expect(options.maxBounds).toStrictEqual(MAP_MAX_BOUNDS)
+  })
+
+  it('fits Germany again once the map has loaded', async () => {
+    await mountMap()
+
+    // Der Container hat beim Konstruieren oft noch nicht seine endgültige Größe;
+    // ohne diesen zweiten Fit war der Süden Deutschlands abgeschnitten.
+    expect(mapInstance.fitBounds).toHaveBeenCalledWith(GERMANY_BOUNDS, {
+      padding: 24,
+      animate: false,
+    })
   })
 
   it('disables rotating and tilting', async () => {
