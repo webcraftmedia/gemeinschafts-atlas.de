@@ -1,18 +1,32 @@
 /*
- * Tailwind 4 is configured here, not in a JS config file: @theme replaces what
- * theme.extend used to do, and the content sources are detected automatically.
+ * Tailwind 4 wird hier konfiguriert, nicht in einer JS-Datei: @theme ersetzt,
+ * was früher theme.extend war, und die Content-Quellen findet es selbst.
  */
 @import 'tailwindcss';
 
 @theme {
-  --color-atlas: oklch(0.52 0.13 160);
-  --color-atlas-dark: oklch(0.42 0.12 160);
+  /* Papier und Tusche — dieselbe Palette wie der Kartenstil in
+     app/utils/mapStyle.ts, damit Karte und Seite nicht auseinanderlaufen. */
+  --color-paper: oklch(0.94 0.017 78);
+  --color-ink: oklch(0.29 0.011 62);
+  /* Die Helligkeiten sind nicht gegriffen, sondern gerechnet: bei L=0.52 kam
+     Linktext auf 4.32:1 gegen das Papier und verfehlte WCAG 1.4.3 (4.5:1) —
+     axe hat genau das gemeldet. L=0.48 ergibt 5.13:1, Weiß auf der Fläche
+     6.12:1. Wer den Farbton ändert, rechnet bitte nach. */
+  --color-atlas: oklch(0.48 0.13 160);
+  --color-atlas-dark: oklch(0.4 0.12 160);
+
+  /* Eine Serife für Überschriften gibt dem Atlas seinen Buchcharakter.
+     Bewusst nur Systemschriften: eine Webfont von Google wäre ein
+     Drittanbieter-Request mit IP-Übertragung, und selbst gehostet kostet sie
+     Ladezeit für einen Effekt, den diese Kaskade beinahe umsonst liefert. */
+  --font-serif: ui-serif, Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
 }
 
 /*
- * Respect the user's motion preference globally. Individual components should
- * not have to remember this, and axe does not test for it — it is a WCAG 2.3.3
- * obligation we owe regardless.
+ * Respektiert die Bewegungspräferenz global. Einzelne Komponenten sollen sich
+ * nicht daran erinnern müssen, und axe prüft es nicht — es ist eine Pflicht aus
+ * WCAG 2.3.3, die wir unabhängig davon haben.
  */
 @media (prefers-reduced-motion: reduce) {
   *,

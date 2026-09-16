@@ -1,25 +1,43 @@
 {
   "app": {
-    "skip-to-content": "Zum Inhalt springen"
+    "brand": "Gemeinschafts-Atlas",
+    "imprint": "Impressum",
+    "nav-label": "Kartennavigation",
+    "skip-to-content": "Zum Inhalt springen",
+    "to-list": "Als Liste",
+    "to-map": "Zur Karte"
   },
   "components": {
     "AppLink": {
       "opens-new-tab": "(öffnet in einem neuen Tab)"
+    },
+    "CommunityList": {
+      "guests": "Gäste willkommen",
+      "heading": "Alle Gemeinschaften",
+      "intro": "Dieselben Orte wie auf der Karte, zum Lesen und Durchsuchen.",
+      "osm": "Auf OpenStreetMap ansehen"
+    },
+    "CommunityMap": {
+      "alternative": "Eine interaktive Karte der Gemeinschaften. Dieselben Angaben stehen weiter unten als Liste.",
+      "label": "Karte der Gemeinschaften in Deutschland"
     }
   },
   "pages": {
-    "impressum": {
-      "back-link": "Zurück zur Startseite",
-      "contact-heading": "Kontakt",
-      "provider-address": "TODO: Name\nTODO: Straße und Hausnummer\nTODO: PLZ und Ort",
-      "provider-heading": "Anbieter gemäß § 5 DDG",
-      "title": "Impressum"
-    },
     "index": {
-      "description": "Der Gemeinschafts-Atlas verzeichnet Gemeinschaften, Projekte und Orte des gemeinschaftlichen Lebens.",
-      "imprint-link": "Impressum",
-      "intro": "Hier entsteht ein Verzeichnis von Gemeinschaften, Projekten und Orten des gemeinschaftlichen Lebens.",
-      "title": "Gemeinschafts-Atlas"
+      "description": "Gemeinschaften in Deutschland, die mehr sind als eine Wohnform — mit Zweck, offenen Türen und Platz für Gäste.",
+      "era-text": "Wer anders leben will, muss das Rad nicht neu erfinden. Es gibt diese Orte schon. Sie sind nur schwer zu finden — dafür gibt es diesen Atlas.",
+      "era-title": "Auf dem Weg in eine neue Zeit",
+      "guests-text": "Fast alle empfangen Gäste. Du kannst hinfahren, mitleben, mitarbeiten und schauen, ob es passt.",
+      "guests-title": "Türen, die offen stehen",
+      "lead": "Überall in Deutschland entstehen Orte, an denen Menschen mehr teilen als eine Adresse.",
+      "roof-text": "Diese Gemeinschaften wohnen nicht nur zusammen. Sie haben sich etwas vorgenommen — Landwirtschaft, Bildung, Handwerk, Heilung, Kultur.",
+      "roof-title": "Mehr als ein Dach",
+      "title": "Gemeinsam statt einsam"
+    },
+    "karte": {
+      "description": "Alle Gemeinschaften des Atlas auf einer Karte von Deutschland.",
+      "loading": "Die Karte wird geladen …",
+      "title": "Karte"
     }
   }
 }

@@ -1,37 +1,64 @@
 import { test, expect } from '@playwright/test'
 
 /**
- * The deployed artifact actually serves pages. Everything else in the suite
- * assumes this; if it fails, the other failures are noise.
+ * Das ausgelieferte Artefakt liefert wirklich Seiten aus. Alles andere in der
+ * Suite setzt das voraus; scheitert es hier, sind die übrigen Fehler Rauschen.
  */
 test.describe('the deployed app', () => {
-  test('serves the start page, server-rendered', async ({ page }) => {
+  test('serves the landing page, server-rendered', async ({ page }) => {
     const response = await page.goto('/')
 
     expect(response?.status()).toBe(200)
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Gemeinschafts-Atlas')
-    // The heading has to be in the HTML, not painted in afterwards: that is the
-    // difference between SSR and a client-side app, and it is what search
-    // engines and text browsers see.
-    expect(await response?.text()).toContain('Gemeinschafts-Atlas')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Gemeinsam statt einsam')
+    // Die Überschrift muss im HTML stehen, nicht nachträglich hineingemalt
+    // werden: das ist der Unterschied zwischen SSR und einer Client-App, und es
+    // ist das, was Suchmaschinen und Textbrowser sehen.
+    expect(await response?.text()).toContain('Gemeinsam statt einsam')
+  })
+
+  test('describes the project without needing JavaScript', async ({ page }) => {
+    const response = await page.goto('/')
+    const html = (await response?.text()) ?? ''
+
+    // Die drei Aussagen, um die es geht — server-gerendert, also auch ohne JS da.
+    expect(html).toContain('wohnen nicht nur zusammen')
+    expect(html).toContain('empfangen Gäste')
+    expect(html).toContain('neue Zeit')
   })
 
   test('declares its language as German', async ({ page }) => {
     await page.goto('/')
 
-    // Without lang, screen readers pronounce German text with English phonemes.
+    // Ohne lang spricht ein Screenreader deutschen Text mit englischen Phonemen.
     await expect(page.locator('html')).toHaveAttribute('lang', 'de')
   })
 
-  test('navigates to the imprint and back without a full reload', async ({ page }) => {
+  test('leads from the landing page to the map', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('link', { name: 'Impressum' }).click()
+    await page.getByRole('link', { name: 'Zur Karte' }).click()
 
-    await expect(page).toHaveURL('/impressum')
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Impressum')
+    await expect(page).toHaveURL('/karte')
+    // Die Karte selbst braucht WebGL; was hier zählt, ist dass die Seite den
+    // zugänglichen Teil ausliefert.
+    await expect(page.getByRole('heading', { name: 'Alle Gemeinschaften' })).toBeVisible()
+  })
 
-    await page.getByRole('link', { name: 'Zurück zur Startseite' }).click()
-    await expect(page).toHaveURL('/')
+  test('lists every community on the map page, server-rendered', async ({ page }) => {
+    const response = await page.goto('/karte')
+    const html = (await response?.text()) ?? ''
+
+    // Die Liste ist das gleichwertige Angebot zur Karte. Käme sie erst per
+    // JavaScript, wäre sie für einen Teil der Nutzer gar nicht vorhanden.
+    expect(html).toContain('Ökodorf Sieben Linden')
+    expect(html).toContain('Kommune Niederkaufungen')
+  })
+
+  test('links the imprint to the operator', async ({ page }) => {
+    await page.goto('/')
+
+    const imprint = page.getByRole('link', { name: /Impressum/ })
+    await expect(imprint).toHaveAttribute('href', 'https://webcraft-media.de/#!impressum')
+    await expect(imprint).toHaveAttribute('rel', 'noopener noreferrer')
   })
 
   test('answers the health probe', async ({ request }) => {
@@ -41,7 +68,7 @@ test.describe('the deployed app', () => {
     expect(await response.json()).toMatchObject({ status: 'ok' })
   })
 
-  test('has no unhandled console errors on the start page', async ({ page }) => {
+  test('has no unhandled console errors on the landing page', async ({ page }) => {
     const errors: string[] = []
     page.on('console', (message) => {
       if (message.type() === 'error') errors.push(message.text())
@@ -49,7 +76,7 @@ test.describe('the deployed app', () => {
     page.on('pageerror', (error) => errors.push(error.message))
 
     await page.goto('/')
-    // Hydration errors are reported after the first paint, so give them a tick.
+    // Hydrationsfehler kommen nach dem ersten Paint — der Seite einen Moment geben.
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 
     expect(errors).toEqual([])

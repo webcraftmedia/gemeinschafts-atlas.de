@@ -50,6 +50,16 @@ export default defineNuxtConfig({
       // operator. Overridable per environment so a staging deployment does not
       // publish the real inbox.
       contactEmail: process.env.NUXT_PUBLIC_CONTACT_EMAIL || 'kontakt@gemeinschafts-atlas.de',
+      // Das Impressum der Betreiberin, extern verlinkt.
+      imprintUrl: process.env.NUXT_PUBLIC_IMPRINT_URL || 'https://webcraft-media.de/#!impressum',
+      // Vector-Tiles für die Karte. OpenFreeMap: kein Key, keine Registrierung,
+      // keine Cookies, keine Limits, EU-Hosting. Konfigurierbar, damit ein
+      // Umzug auf selbst gehostete PMTiles eine URL-Änderung bleibt und kein
+      // Umbau — siehe docs/karte.md.
+      tilesUrl: process.env.NUXT_PUBLIC_TILES_URL || 'https://tiles.openfreemap.org/planet',
+      glyphsUrl:
+        process.env.NUXT_PUBLIC_GLYPHS_URL ||
+        'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
     },
   },
   css: ['~/assets/css/main.css'],
@@ -57,6 +67,29 @@ export default defineNuxtConfig({
   // is all the build needs. No tailwind.config.ts, no Nuxt module.
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      /*
+       * Kein Eingriff ins Chunking. Zwei Versuche, MapLibre in einen eigenen,
+       * benannten Chunk zu zwingen, sind hier gescheitert — beide nachgemessen:
+       *
+       *   output.chunkFileNames  ließ den Client-Build in eine einzige Datei
+       *                          kollabieren (12 Chunks → 1).
+       *   output.codeSplitting   zog maplibre-gl-worker.mjs in den Sammelchunk,
+       *                          statt es als eigene Datei auszugeben. Die Karte
+       *                          blieb dann leer: Canvas da, aber ohne Worker
+       *                          dekodiert niemand die Vector Tiles.
+       *
+       * Der zweite Fall ist der lehrreichere — er war im Build unsichtbar und
+       * wäre ohne einen Blick auf die gerenderte Seite durchgegangen. Nuxt teilt
+       * von sich aus korrekt auf; das Budget in .size-limit.json misst deshalb
+       * die Summe statt einzelner Chunks.
+       */
+      // Vite warnt ab 500 kB und rät zu dynamischem Import — was hier bereits
+      // geschieht: Die Karte wird erst in onMounted geladen. Die Warnung kann
+      // das nicht wissen. Angehoben statt stummgeschaltet, damit sie bei
+      // *unbeabsichtigtem* Wachstum weiter greift.
+      chunkSizeWarningLimit: 1200,
+    },
   },
   ssr: true,
   app: {

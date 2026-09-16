@@ -1,12 +1,12 @@
 [
   {
     "path": ".output/public/_nuxt/*.js",
-    "limit": "100 kB",
-    "name": "JS bundles"
+    "limit": "360 kB",
+    "name": "JS gesamt — davon ~240 kB MapLibre, das nur /karte nachlädt"
   },
   {
     "path": ".output/public/_nuxt/*.css",
-    "limit": "5 kB",
-    "name": "CSS bundles"
+    "limit": "18 kB",
+    "name": "CSS gesamt — inkl. MapLibres Bedienelemente"
   }
 ]

@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <div class="min-h-screen bg-white text-slate-900">
+  <div class="min-h-screen bg-paper text-ink">
     <NuxtRouteAnnouncer />
     <!--
       First thing in the tab order, invisible until focused: a keyboard user must
@@ -15,8 +15,10 @@
     >
       {{ t('app.skip-to-content') }}
     </a>
-    <main id="main" class="mx-auto max-w-2xl px-4 py-16">
+    <!-- NuxtPage muss *in* NuxtLayout stehen: der Slot ist es, den die Layouts
+         rendern. Ohne ihn kommt das Layout, aber keine Seite. -->
+    <NuxtLayout>
       <NuxtPage />
-    </main>
+    </NuxtLayout>
   </div>
 </template>

@@ -195,6 +195,16 @@ export default withNuxt(
       'vitest/max-expects': 'off',
       'vitest/prefer-lowercase-title': 'off',
       'vitest/prefer-describe-function-title': 'off',
+      // Its auto-fix rewrites toHaveBeenCalled() into toHaveBeenCalledWith(),
+      // which asserts "called with no arguments" — a different claim entirely,
+      // and one that silently passes where the original would have failed.
+      'vitest/prefer-called-with': 'off',
+      // Type parameters on a bare vi.fn() mock add noise without adding safety
+      'vitest/require-mock-type-parameters': 'off',
+      // Indexing into a fixture array (communities[0]!) is idiomatic here: the
+      // fixture is right there in the file, and an optional chain would turn a
+      // broken fixture into a silently passing test.
+      '@typescript-eslint/no-non-null-assertion': 'off',
       // Tests deliberately set globals and env vars
       'n/no-process-env': 'off',
     },
