@@ -1,0 +1,26 @@
+/*
+ * Tailwind 4 is configured here, not in a JS config file: @theme replaces what
+ * theme.extend used to do, and the content sources are detected automatically.
+ */
+@import 'tailwindcss';
+
+@theme {
+  --color-atlas: oklch(0.52 0.13 160);
+  --color-atlas-dark: oklch(0.42 0.12 160);
+}
+
+/*
+ * Respect the user's motion preference globally. Individual components should
+ * not have to remember this, and axe does not test for it — it is a WCAG 2.3.3
+ * obligation we owe regardless.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

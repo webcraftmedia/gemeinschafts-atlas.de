@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/app"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 99
+    groups:
+      # Vitest and its coverage provider are version-locked to each other, and
+      # @nuxt/test-utils pins the vitest it was built against — a PR that moves
+      # only one of them cannot install.
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "@nuxt/test-utils"
+      # @size-limit/file peer-pins size-limit to the exact same version.
+      size-limit:
+        patterns:
+          - "size-limit"
+          - "@size-limit/*"
+      # The Vite plugin and the framework itself ship as one release.
+      tailwind:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 99

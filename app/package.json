@@ -1,0 +1,57 @@
+{
+  "name": "app",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "test:build": "node scripts/build-strict.mjs",
+    "test:smoke": "node scripts/dev-smoke.mjs",
+    "test:lint": "npm run test:lint:eslint && npm run test:lint:locales && npm run test:lint:typecheck",
+    "test:lint:eslint": "eslint --max-warnings 0 .",
+    "test:lint:locales": "scripts/locales/locales.sh ./locales",
+    "test:lint:locales:fix": "scripts/locales/locales.sh ./locales --fix",
+    "test:lint:typecheck": "vue-tsc --noEmit",
+    "test:unit": "TZ=UTC vitest run --coverage",
+    "test:unit:dev": "TZ=UTC vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:a11y:update": "A11Y_UPDATE_BASELINE=1 playwright test a11y",
+    "test:size": "size-limit"
+  },
+  "dependencies": {
+    "@nuxtjs/i18n": "^10.6.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "nuxt": "^4.5.2",
+    "tailwindcss": "^4.3.3",
+    "vue": "^3.5.42",
+    "vue-router": "^5.3.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@intlify/eslint-plugin-vue-i18n": "^4.5.1",
+    "@nuxt/eslint": "^1.17.0",
+    "@nuxt/test-utils": "^4.3.2",
+    "@playwright/test": "^1.63.0",
+    "@size-limit/file": "^14.0.0",
+    "@types/node": "^26.5.1",
+    "@vitest/coverage-v8": "^5.0.1",
+    "@vue/test-utils": "^2.5.0",
+    "eslint": "^10.10.0",
+    "eslint-config-it4c": "^0.13.2",
+    "h3": "^1.15.11",
+    "happy-dom": "^20.14.3",
+    "prettier": "^3.9.6",
+    "size-limit": "^14.0.0",
+    "vitest": "^5.0.1",
+    "vue-tsc": "^3.3.11"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "unrs-resolver": true
+  }
+}

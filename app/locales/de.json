@@ -1,0 +1,25 @@
+{
+  "app": {
+    "skip-to-content": "Zum Inhalt springen"
+  },
+  "components": {
+    "AppLink": {
+      "opens-new-tab": "(öffnet in einem neuen Tab)"
+    }
+  },
+  "pages": {
+    "impressum": {
+      "back-link": "Zurück zur Startseite",
+      "contact-heading": "Kontakt",
+      "provider-address": "TODO: Name\nTODO: Straße und Hausnummer\nTODO: PLZ und Ort",
+      "provider-heading": "Anbieter gemäß § 5 DDG",
+      "title": "Impressum"
+    },
+    "index": {
+      "description": "Der Gemeinschafts-Atlas verzeichnet Gemeinschaften, Projekte und Orte des gemeinschaftlichen Lebens.",
+      "imprint-link": "Impressum",
+      "intro": "Hier entsteht ein Verzeichnis von Gemeinschaften, Projekten und Orten des gemeinschaftlichen Lebens.",
+      "title": "Gemeinschafts-Atlas"
+    }
+  }
+}
