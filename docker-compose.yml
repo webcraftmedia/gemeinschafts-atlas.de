@@ -19,14 +19,17 @@ services:
       target: production
     restart: unless-stopped
     ports:
-      # 3000 belegt auf dieser Maschine schon ein anderes Projekt, und der
-      # Host-Dev-Server (`cd app && npm run dev`) will es ebenfalls. Der
-      # Container bekommt deshalb einen eigenen Port — über APP_PORT
-      # verschiebbar, im Container bleibt es 3000.
-      - "127.0.0.1:${APP_PORT:-3002}:3000"
+      # Innen wie außen 3000 — dieselbe Nummer, die Nuxt beim Start ausgibt.
+      # Weicht das ab, schickt die Logzeile jeden auf eine URL, die es nicht
+      # gibt.
+      # Kollidiert bewusst mit dem Host-Dev-Server (`cd app && npm run dev`)
+      # und mit anderen Projekten auf 3000: beides sind Wege, *diese* App zu
+      # starten, und zwei davon gleichzeitig will man selten. Wenn doch:
+      #   APP_PORT=3002 docker compose up -d
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
     environment:
       NODE_ENV: production
-      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost:3002}
+      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-http://localhost:${APP_PORT:-3000}}
       NUXT_PUBLIC_CONTACT_EMAIL: ${NUXT_PUBLIC_CONTACT_EMAIL:-kontakt@gemeinschafts-atlas.de}
     # Kein depends_on auf postgres: die Anwendung spricht noch nicht mit der
     # Datenbank. Die Kopplung kommt, wenn es Datenzugriff gibt — vorher wäre

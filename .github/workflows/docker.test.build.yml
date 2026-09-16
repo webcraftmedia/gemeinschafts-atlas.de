@@ -47,8 +47,8 @@ jobs:
 
       - name: App | Serves a server-rendered page
         run: |
-          curl --fail --silent --show-error http://127.0.0.1:3002/api/health
-          curl --fail --silent --show-error http://127.0.0.1:3002/ | grep -q '<h1'
+          curl --fail --silent --show-error http://127.0.0.1:3000/api/health
+          curl --fail --silent --show-error http://127.0.0.1:3000/ | grep -q '<h1'
 
       - name: Container logs
         if: always()

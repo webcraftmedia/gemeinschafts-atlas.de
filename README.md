@@ -39,7 +39,7 @@ werden in der CI gebaut — such dir einen aus.
 **Alles im Container** (nichts außer Docker nötig):
 
 ```sh
-docker compose up -d           # App auf 127.0.0.1:3002, PostGIS auf 5433
+docker compose up -d           # App auf http://localhost:3000, PostGIS auf 5433
 docker compose logs -f app
 ```
 
@@ -57,8 +57,12 @@ npm ci
 npm run dev                    # http://localhost:3000
 ```
 
-Beides gleichzeitig geht auch — deshalb hat der Container Port 3002 und nicht
-3000. `node_modules` und `.nuxt` liegen im Container in eigenen Volumes und
+Beide Wege belegen Port 3000 — es sind Alternativen, nicht Ergänzungen. Wer sie
+doch nebeneinander braucht, verschiebt den Container: `APP_PORT=3002 docker
+compose up -d` (oder dauerhaft `APP_PORT=3002` in einer `.env` im
+Repo-Wurzelverzeichnis, die ist gitignored).
+
+`node_modules` und `.nuxt` liegen im Container in eigenen Volumes und
 nicht im bind-gemounteten Quellcode; das ist keine Optimierung, sondern nötig:
 `esbuild` und `unrs-resolver` bringen native Binaries mit, und der Host ist
 glibc, das Image musl. Ein geteiltes Verzeichnis hätte für eine der beiden

@@ -9,7 +9,7 @@ services:
     environment:
       NODE_ENV: development
     ports:
-      - "127.0.0.1:${APP_PORT:-3002}:3000"
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
       # Vites HMR-Websocket. Ohne diesen Port lädt die Seite, aber jede
       # Änderung erfordert einen manuellen Reload — und die Ursache steht nur
       # in der Browser-Konsole.
