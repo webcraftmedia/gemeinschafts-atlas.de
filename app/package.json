@@ -42,7 +42,7 @@
     "@types/node": "^26.5.1",
     "@vitest/coverage-v8": "^5.0.1",
     "@vue/test-utils": "^2.5.0",
-    "eslint": "^10.10.0",
+    "eslint": "^10.11.0",
     "eslint-config-it4c": "^0.13.2",
     "h3": "^1.15.11",
     "happy-dom": "^20.14.3",
