@@ -13,7 +13,7 @@ Alle Kommandos laufen in `app/`.
 | `npm run test:unit:dev` | Vitest im Watch-Modus |
 | `npm run test:build` | Produktions-Build; jede Warnung ist ein Fehler |
 | `npm run test:smoke` | Startet `nuxt dev`, holt `/`, jede Warnung ist ein Fehler |
-| `npm run test:size` | Bundle-Budget gegen `.output/public/_nuxt/*` (setzt einen Build voraus) |
+| `npm run test:size` | Bundle-Budgets gegen `.output/public/_nuxt/*` (setzt einen Build voraus) |
 | `npm run test:e2e` | Playwright gegen das Produktions-Artefakt, inkl. axe-Scan |
 | `npm run test:e2e:ui` | Playwright im UI-Modus |
 | `npm run test:e2e:a11y:update` | axe-Baseline neu schreiben (nur nach beabsichtigter Änderung) |
@@ -75,6 +75,35 @@ und trotzdem mit 0 aussteigt. Ausnahmen kommen in die `ACCEPTED`-Liste im
 jeweiligen Skript — mit Begründung, und so wenige wie irgend möglich. Jeder
 Eintrag dort bedeutet, dass der nächste Leser darauf vertrauen muss, dass diese
 Warnung noch harmlos ist.
+
+Beide Listen sind leer, und das soll so bleiben. Wo eine Warnung wirklich nichts
+über das Projekt aussagt, ist der bessere Ort ihre Quelle: Rolldowns
+`[PLUGIN_TIMINGS]` etwa wird in `nuxt.config.ts` über `checks.pluginTimings`
+abgeschaltet, statt hier geduldet zu werden. Eine Warnung, die nie entsteht,
+muss niemand später wieder bewerten.
+
+## Zwei Budgets statt einer Summe
+
+`.size-limit.json` misst getrennt, was die Seite selbst wiegt (App-JS, derzeit
+rund 104 kB brotli) und was MapLibre samt Worker kostet (349 kB). Die Trennung
+ist der eigentliche Gegenstand: Die Karte wird dynamisch nachgeladen, und ein
+Summen-Budget hätte das nie bemerkt — es maß vor allem MapLibres
+Versionssprünge und hielt eine Schätzung fest, die um
+mehr als das Doppelte danebenlag.
+
+Damit das messbar ist, bekommt MapLibre in `nuxt.config.ts` einen benannten
+Chunk. Wer dort etwas ändert, sieht bitte nach, dass `maplibre-gl-worker.mjs`
+weiterhin als eigene Datei herauskommt — ohne den Worker bleibt die Karte leer,
+und zwar ohne jede Fehlermeldung. Der E2E-Test `actually renders map tiles`
+prüft genau das gegen das Netz.
+
+**Was diese Budgets nicht messen: welche Seite was lädt.** size-limit zählt
+Dateien, nicht Aufrufe. Seit die Startseite die echte Karte unter der Zeichnung
+liegen hat und sie beim Scrollen aufklart, lädt jeder Startseitenbesuch
+MapLibre — das Budget bliebe auch dann grün, wenn jemand es statisch
+importierte. Diese Grenze bewacht `e2e/smoke.spec.ts`: Ein Test hält fest, dass
+die Zeichnung server-gerendert ausgeliefert wird, ein zweiter, dass MapLibre
+*nach* dem ersten Aufbau kommt und nicht davor.
 
 ## Barrierefreiheit
 

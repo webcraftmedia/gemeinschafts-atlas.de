@@ -11,14 +11,16 @@ Lebens. Nuxt 4 mit SSR, Deployment als Node-Prozess hinter einem Reverse Proxy.
 ├── docker-compose.override.yml Lokal: App als Dev-Server mit Hot Reload
 ├── app/                    Die Anwendung (Nuxt-Projekt)
 │   ├── Dockerfile          Mehrstufig: development / build / production
-│   ├── app/                Vue-Ebene: app.vue, pages/, components/, assets/
+│   ├── app/                Vue-Ebene: app.vue, pages/, layouts/, components/,
+│   │                       utils/, data/, assets/
 │   ├── server/             Nitro: API-Routen
 │   ├── locales/            Übersetzungen (de.json)
 │   ├── test/               Vitest-Setup und Helfer
 │   ├── e2e/                Playwright-Suite inkl. axe-Baseline
 │   └── scripts/            Build-/Smoke-Gates, Locales-Lint
 ├── docs/
-│   └── testing.md          Was geprüft wird und warum
+│   ├── testing.md          Was geprüft wird und warum
+│   └── karte.md            Kacheln, Kartenstil, Zoomgrenzen, Barrierefreiheit
 └── .github/
     ├── workflows/          Ein Workflow je Gate
     └── webhooks/           Deployment via GitHub-Release-Webhook
@@ -145,9 +147,16 @@ GitHub-Webhook auf veröffentlichte Releases. Einrichtung und Ablauf:
 
 ## Offene Punkte vor dem ersten öffentlichen Deployment
 
-- `app/app/pages/impressum.vue` bzw. `app/locales/de.json`: Anbieterangaben nach
-  § 5 DDG ausfüllen (aktuell TODO-Platzhalter).
 - Datenschutzerklärung anlegen — sobald irgendetwas personenbezogene Daten
-  verarbeitet, ist sie Pflicht.
+  verarbeitet, ist sie Pflicht. Bis dahin bleibt die Angriffsfläche klein:
+  keine Cookies, keine Schriften von Dritten, und die Kacheln kommen von
+  OpenFreeMap ohne Tracking (siehe [docs/karte.md](docs/karte.md)) — die
+  IP-Adresse geht dabei trotzdem dorthin und gehört in die Erklärung.
 - `NUXT_PUBLIC_SITE_URL` und `NUXT_PUBLIC_CONTACT_EMAIL` in der `.env` des
   Servers setzen.
+- Die Einträge in `app/app/data/communities.ts` sind Platzhalter: reale Projekte,
+  aber ungeprüfte Koordinaten und Beschreibungen. Vor der Veröffentlichung mit
+  den Gemeinschaften abgleichen.
+
+Das Impressum liegt bewusst nicht im Repo: die Fußzeile verlinkt das der
+Betreiberin, konfigurierbar über `NUXT_PUBLIC_IMPRINT_URL`.
