@@ -52,9 +52,16 @@ describe('CommunityList', () => {
     expect(wrapper.text()).not.toContain('Gäste willkommen')
   })
 
-  it('can be reached by the anchor the map header links to', async () => {
+  it('brings no heading of its own', async () => {
     const wrapper = await mountSuspended(CommunityList, { props: { communities } })
 
-    expect(wrapper.get('section').attributes('id')).toBe('liste')
+    // Seit die Liste unter /liste eine eigene Seite hat, gehört die Überschrift
+    // dorthin — als h1. Brächte die Komponente eine zweite mit, stünde auf der
+    // Seite eine Gliederung mit zwei Einstiegen.
+    // Über das gerenderte Markup und nicht über `wrapper.element.tagName`: Der
+    // Typ des Wurzelelements ist bei einer Komponente nicht aufzulösen, und ein
+    // `any` im Test prüft am Ende weniger als es behauptet.
+    expect(wrapper.html()).toMatch(/^<ul/)
+    expect(wrapper.findAll('h1')).toHaveLength(0)
   })
 })

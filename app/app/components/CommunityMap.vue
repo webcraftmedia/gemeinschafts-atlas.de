@@ -2,30 +2,64 @@
   import type { Map as MapLibreMap } from 'maplibre-gl'
   import type { Community } from '~/data/communities'
 
-  import { GERMANY_BOUNDS, MAP_MAX_BOUNDS } from '~/data/communities'
+  import { GERMANY_BOUNDS } from '~/data/communities'
   import { paperAndInkStyle } from '~/utils/mapStyle'
+  import { minZoomForBounds, panFrameFor, MAP_PADDING } from '~/utils/mapView'
 
   /**
    * Die Vektorkarte.
    *
    * maplibre-gl wird erst in onMounted geladen, aus zwei Gründen: Die Bibliothek
    * braucht DOM und WebGL, existiert beim Server-Rendering also nicht sinnvoll —
-   * und sie ist ~250 kB. Als dynamischer Import landet sie in einem eigenen
-   * Chunk, den nur bezahlt, wer die Karte auch öffnet. Die Startseite bleibt
-   * davon unberührt (siehe .size-limit.json, das beide getrennt misst).
+   * und sie ist die mit Abstand größte Abhängigkeit des Projekts. Als
+   * dynamischer Import landet sie in einem eigenen Chunk — nachgemessen am
+   * 29.09.2026: 103 kB brotli für die Seite, 349 kB für die Karte.
+   * `.size-limit.json` misst beide Hälften getrennt und hält damit fest, dass
+   * diese Trennung bestehen bleibt.
    *
    * Barrierefreiheit: Die Marker sind bewusst *nicht* fokussierbar. Ein
    * Tastaturnutzer soll nicht durch Dutzende Punkte auf einer Canvas tabben,
    * deren Position er nicht sieht — für ihn ist CommunityList das gleichwertige
    * Angebot. Die Zoom-Bedienelemente bleiben erreichbar.
    */
-  const props = defineProps<{ communities: Community[] }>()
+  const props = withDefaults(
+    defineProps<{
+      communities: Community[]
+      /**
+       * Für die Karte *in* einer scrollenden Seite: Das Rad scrollt dann die
+       * Seite und zoomt erst mit Strg, ein Finger schiebt die Seite und erst
+       * zwei die Karte. Ohne das fängt eine bildschirmfüllende Karte den
+       * Scroll ein, und die Seite endet für den Besucher an ihrem oberen Rand.
+       */
+      cooperativeGestures?: boolean
+    }>(),
+    { cooperativeGestures: false },
+  )
 
   const { t } = useI18n()
   const { tilesUrl, glyphsUrl } = useRuntimeConfig().public
 
   const container = useTemplateRef<HTMLDivElement>('container')
   let map: MapLibreMap | null = null
+
+  /**
+   * Zoom-Untergrenze und Schiebe-Rahmen an die Fenstergröße anpassen.
+   *
+   * Beides hängt am Seitenverhältnis des Containers, und das ändert sich: beim
+   * Aufbau, beim Drehen des Telefons, beim Ein- und Ausblenden der Adressleiste
+   * mobiler Browser. Eine feste Zahl stimmt deshalb immer nur für ein Fenster —
+   * genau daran scheiterte der volle Deutschland-Blick vorher.
+   */
+  function fitToContainer(instance: MapLibreMap, element: HTMLElement): void {
+    const viewport = { width: element.clientWidth, height: element.clientHeight }
+    // Ein Container ohne Maße kommt vor — noch nicht im Layout, oder in einem
+    // eingeklappten Bereich. Dann ist jede Grenze geraten; lieber die alte
+    // behalten, bis wirklich gemessen werden kann.
+    if (viewport.width <= 0 || viewport.height <= 0) return
+
+    instance.setMaxBounds(panFrameFor(GERMANY_BOUNDS, viewport))
+    instance.setMinZoom(minZoomForBounds(GERMANY_BOUNDS, viewport))
+  }
 
   onMounted(async () => {
     const [maplibre, workerUrl] = await Promise.all([
@@ -46,36 +80,53 @@
       import('maplibre-gl/dist/maplibre-gl.css'),
     ])
     if (!container.value) return
+    // Einmal festhalten: die beiden Handler unten laufen später und sollen
+    // nicht jedes Mal aufs Neue fragen müssen, ob es das Element noch gibt.
+    const frame = container.value
 
     maplibre.setWorkerUrl(workerUrl.default)
 
-    map = new maplibre.Map({
-      container: container.value,
+    const instance = new maplibre.Map({
+      container: frame,
       style: paperAndInkStyle({ tilesUrl, glyphsUrl }),
       bounds: GERMANY_BOUNDS,
-      fitBoundsOptions: { padding: 24 },
-      // Hält die Karte in der Gegend: außerhalb gibt es keine Einträge, und wer
-      // versehentlich über den Atlantik scrollt, findet selten zurück. Bewusst
-      // der weitere Rahmen — siehe MAP_MAX_BOUNDS.
-      maxBounds: MAP_MAX_BOUNDS,
-      minZoom: 4,
+      fitBoundsOptions: { padding: MAP_PADDING },
       maxZoom: 14,
       // Die Karte ist eine Übersicht, keine Navigation — Drehen und Kippen
       // bringen nichts und verlieren nur die Orientierung.
       pitchWithRotate: false,
       dragRotate: false,
+      cooperativeGestures: props.cooperativeGestures,
+      // MapLibres eigene Hinweistexte sind englisch und lassen sich nur hier
+      // ersetzen — ein deutscher Hinweis, der nur auf Englisch erscheint, ist
+      // kein Hinweis.
+      locale: {
+        'CooperativeGesturesHandler.WindowsHelpText': t('components.CommunityMap.gesture-windows'),
+        'CooperativeGesturesHandler.MacHelpText': t('components.CommunityMap.gesture-mac'),
+        'CooperativeGesturesHandler.MobileHelpText': t('components.CommunityMap.gesture-mobile'),
+      },
       attributionControl: { compact: true },
     })
+    map = instance
 
-    map.addControl(new maplibre.NavigationControl({ showCompass: false }), 'bottom-right')
+    instance.addControl(new maplibre.NavigationControl({ showCompass: false }), 'bottom-right')
+
+    // Grenzen nachziehen, sooft sich die Containergröße ändert. MapLibre meldet
+    // das von sich aus (trackResize), und es ist nicht bloß der Wechsel zwischen
+    // Hoch- und Querformat: mobile Browser blenden ihre Adressleiste beim
+    // Scrollen ein und aus, und die Karte ist 100 dvh hoch.
+    instance.on('resize', () => {
+      fitToContainer(instance, frame)
+    })
 
     // Noch einmal einpassen, sobald die Karte steht. Beim Konstruieren hat der
     // Container seine endgültige Größe oft noch nicht, und MapLibre passt zwar
     // die Leinwand an, wiederholt den Fit aber nicht — sichtbar daran, dass der
     // Süden Deutschlands unten abgeschnitten war. Ohne Animation, damit die
     // Seite nicht beim Öffnen zu wackeln anfängt.
-    map.once('load', () => {
-      map?.fitBounds(GERMANY_BOUNDS, { padding: 24, animate: false })
+    instance.once('load', () => {
+      fitToContainer(instance, frame)
+      instance.fitBounds(GERMANY_BOUNDS, { padding: MAP_PADDING, animate: false })
     })
 
     for (const community of props.communities) {
@@ -99,7 +150,7 @@
       new maplibre.Marker({ element })
         .setLngLat(community.coordinates)
         .setPopup(new maplibre.Popup({ offset: 14 }).setDOMContent(popupContent))
-        .addTo(map)
+        .addTo(instance)
     }
   })
 

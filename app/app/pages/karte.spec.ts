@@ -1,35 +1,15 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { describe, it, expect, vi } from 'vitest'
 
+import { mapLibreStub } from '../../test/helpers/maplibre'
+
 import KartePage from './karte.vue'
 
 import { communities } from '~/data/communities'
 
 // Die Seite bindet die Karte ein, die WebGL braucht. Hier interessiert nur, was
 // die Seite zusammensetzt — die Karte selbst hat ihren eigenen Spec.
-// `function`, nicht Pfeilfunktion — die Komponente ruft sie mit `new` auf.
-vi.mock(import('maplibre-gl'), () => {
-  const marker = {
-    setLngLat: () => marker,
-    setPopup: () => marker,
-    addTo: () => marker,
-  }
-  return {
-    Map: vi.fn(function () {
-      return { addControl: vi.fn(), remove: vi.fn() }
-    }),
-    Marker: vi.fn(function () {
-      return marker
-    }),
-    Popup: vi.fn(function () {
-      return { setDOMContent: () => ({}) }
-    }),
-    NavigationControl: vi.fn(function () {
-      return {}
-    }),
-    setWorkerUrl: vi.fn(),
-  }
-})
+vi.mock(import('maplibre-gl'), () => mapLibreStub())
 // Das Worker-Asset ist ein Vite-Konstrukt (?worker&url) und existiert unter
 // vitest nicht — die URL wird gebraucht, aber nie aufgerufen.
 vi.mock(import('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'), () => ({
@@ -38,23 +18,22 @@ vi.mock(import('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'), () => ({
 vi.mock(import('maplibre-gl/dist/maplibre-gl.css'), () => ({}))
 
 describe('karte page', () => {
-  it('shows the list alongside the map', async () => {
+  it('hands every community to the map', async () => {
     const wrapper = await mountSuspended(KartePage)
 
-    // Ohne die Liste wäre die Seite für Tastatur und Screenreader leer — sie
-    // ist kein Anhang, sondern der zugängliche Teil des Angebots.
-    expect(wrapper.find('#liste').exists()).toBe(true)
-    for (const community of communities) {
-      expect(wrapper.text()).toContain(community.name)
-    }
+    // Die Seite ist seit dem Umbau nur noch die Karte — die Liste hat unter
+    // /liste eine eigene Adresse. Was hier bleibt, ist die eine Frage, die
+    // diese Seite beantworten muss: Bekommt die Karte alle Daten?
+    const map = wrapper.findComponent({ name: 'CommunityMap' })
+    expect(map.props('communities')).toStrictEqual(communities)
   })
 
-  it('hands the same data to map and list', async () => {
+  it('does not carry a second copy of the list', async () => {
     const wrapper = await mountSuspended(KartePage)
 
-    // Zwei Darstellungen einer Quelle. Liefe die Liste auf anderen Daten als die
-    // Karte, wäre sie kein gleichwertiges Angebot mehr, sondern ein zweites.
-    const list = wrapper.findComponent({ name: 'CommunityList' })
-    expect(list.props('communities')).toStrictEqual(communities)
+    // Zwei Adressen mit demselben Verzeichnis wären zwei Stellen, die
+    // auseinanderlaufen können. Der Weg zur Liste steht in der Leiste des
+    // Layouts und im Fallback ohne JavaScript — nicht als Kopie hier.
+    expect(wrapper.findComponent({ name: 'CommunityList' }).exists()).toBe(false)
   })
 })

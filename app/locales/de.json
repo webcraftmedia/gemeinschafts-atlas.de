@@ -13,12 +13,13 @@
     },
     "CommunityList": {
       "guests": "Gäste willkommen",
-      "heading": "Alle Gemeinschaften",
-      "intro": "Dieselben Orte wie auf der Karte, zum Lesen und Durchsuchen.",
       "osm": "Auf OpenStreetMap ansehen"
     },
     "CommunityMap": {
-      "alternative": "Eine interaktive Karte der Gemeinschaften. Dieselben Angaben stehen weiter unten als Liste.",
+      "alternative": "Eine interaktive Karte der Gemeinschaften. Dieselben Angaben stehen als Liste auf einer eigenen Seite, erreichbar über „Als Liste“.",
+      "gesture-mac": "Zum Zoomen ⌘ + Scrollen benutzen",
+      "gesture-mobile": "Zum Verschieben zwei Finger benutzen",
+      "gesture-windows": "Zum Zoomen Strg + Scrollen benutzen",
       "label": "Karte der Gemeinschaften in Deutschland"
     }
   },
@@ -29,7 +30,11 @@
       "era-title": "Auf dem Weg in eine neue Zeit",
       "guests-text": "Fast alle empfangen Gäste. Du kannst hinfahren, mitleben, mitarbeiten und schauen, ob es passt.",
       "guests-title": "Türen, die offen stehen",
+      "kicker": "Ein Verzeichnis gemeinschaftlichen Lebens",
       "lead": "Überall in Deutschland entstehen Orte, an denen Menschen mehr teilen als eine Adresse.",
+      "list-intro": "Dieselben Orte wie auf der Karte, zum Lesen und Durchsuchen.",
+      "list-title": "Alle Gemeinschaften",
+      "map-count": "{count} Gemeinschaften",
       "roof-text": "Diese Gemeinschaften wohnen nicht nur zusammen. Sie haben sich etwas vorgenommen — Landwirtschaft, Bildung, Handwerk, Heilung, Kultur.",
       "roof-title": "Mehr als ein Dach",
       "title": "Gemeinsam statt einsam"
@@ -37,7 +42,13 @@
     "karte": {
       "description": "Alle Gemeinschaften des Atlas auf einer Karte von Deutschland.",
       "loading": "Die Karte wird geladen …",
-      "title": "Karte"
+      "title": "Karte",
+      "to-list": "Alle Gemeinschaften als Liste"
+    },
+    "liste": {
+      "description": "Alle Gemeinschaften des Atlas als Verzeichnis zum Lesen — mit Ort, Zweck und Hinweis auf Gästeplätze.",
+      "intro": "Dieselben Orte wie auf der Karte, zum Lesen und Durchsuchen.",
+      "title": "Alle Gemeinschaften"
     }
   }
 }

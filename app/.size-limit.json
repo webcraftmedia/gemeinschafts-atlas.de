@@ -1,8 +1,13 @@
 [
   {
-    "path": ".output/public/_nuxt/*.js",
-    "limit": "360 kB",
-    "name": "JS gesamt — davon ~240 kB MapLibre, das nur /karte nachlädt"
+    "path": [".output/public/_nuxt/*.js", "!.output/public/_nuxt/maplibre*.js"],
+    "limit": "115 kB",
+    "name": "App-JS — alles außer der Karte, also das, was jeder Besuch lädt"
+  },
+  {
+    "path": ".output/public/_nuxt/maplibre*.js",
+    "limit": "375 kB",
+    "name": "MapLibre samt Worker — lädt nur, wer die Karte zu sehen bekommt"
   },
   {
     "path": ".output/public/_nuxt/*.css",
