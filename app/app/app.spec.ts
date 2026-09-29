@@ -1,7 +1,18 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+
+import { mapLibreStub } from '../test/helpers/maplibre'
 
 import App from './app.vue'
+
+// Die Wurzel rendert die geroutete Seite, und auf `/` steht seit dem Umbau die
+// Karte. Ohne den Ersatz baut MapLibre hier eine echte Karte, findet kein WebGL
+// und wirft in eine Promise, auf die niemand wartet.
+vi.mock(import('maplibre-gl'), () => mapLibreStub())
+vi.mock(import('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'), () => ({
+  default: '/maplibre-gl-worker.js',
+}))
+vi.mock(import('maplibre-gl/dist/maplibre-gl.css'), () => ({}))
 
 /**
  * Die Wurzel. Was hier steht, gilt für jede Seite — und genau deshalb fällt es

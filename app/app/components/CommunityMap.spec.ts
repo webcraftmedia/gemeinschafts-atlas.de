@@ -4,7 +4,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 import CommunityMap from './CommunityMap.vue'
 
-import { communities, GERMANY_BOUNDS, MAP_MAX_BOUNDS } from '~/data/communities'
+import { communities, GERMANY_BOUNDS } from '~/data/communities'
+import { minZoomForBounds, panFrameFor, MAP_PADDING } from '~/utils/mapView'
 
 /**
  * MapLibre braucht WebGL, das happy-dom nicht hat — die Bibliothek wird deshalb
@@ -17,11 +18,16 @@ const mapInstance = vi.hoisted(() => ({
   addControl: vi.fn(),
   remove: vi.fn(),
   fitBounds: vi.fn(),
+  setMinZoom: vi.fn(),
+  setMaxBounds: vi.fn(),
   // `once` ruft den Handler sofort auf — im Test ist "die Karte ist geladen"
   // kein Warten wert, und so lässt sich prüfen, was danach passiert.
   once: vi.fn((_event: string, handler: () => void) => {
     handler()
   }),
+  // `on` merkt sich den Handler, statt ihn zu rufen: ein resize passiert später
+  // und wird im Test ausgelöst, wo er hingehört.
+  on: vi.fn(),
 }))
 const markerInstance = vi.hoisted(() => {
   const marker = {
@@ -75,8 +81,27 @@ vi.mock(import('maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'), () => ({
 }))
 vi.mock(import('maplibre-gl/dist/maplibre-gl.css'), () => ({}))
 
-async function mountMap() {
-  const wrapper = await mountSuspended(CommunityMap, { props: { communities } })
+/**
+ * happy-dom rechnet kein Layout — jedes Element misst 0 × 0. Genau diese Zahl
+ * ist für die Karte aber die interessante: aus ihr werden Zoomgrenze und
+ * Schiebe-Rahmen abgeleitet. Sie wird deshalb gesetzt, und ein Test setzt sie
+ * bewusst zurück auf nichts.
+ */
+const VIEWPORT = { width: 1440, height: 900 }
+
+function measureContainerAs({ width, height }: { width: number; height: number }) {
+  Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+    value: width,
+    configurable: true,
+  })
+  Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+    value: height,
+    configurable: true,
+  })
+}
+
+async function mountMap(props: { cooperativeGestures?: boolean } = {}) {
+  const wrapper = await mountSuspended(CommunityMap, { props: { communities, ...props } })
   // onMounted lädt maplibre dynamisch nach; ein Tick reicht dafür nicht.
   await flushPromises()
   await flushPromises()
@@ -86,16 +111,15 @@ async function mountMap() {
 describe('CommunityMap', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    measureContainerAs(VIEWPORT)
   })
 
-  it('constrains the map to Germany', async () => {
+  it('starts on Germany', async () => {
     await mountMap()
 
     const options = MapMock.mock.calls[0]?.[0] as Record<string, unknown>
     expect(options.bounds).toStrictEqual(GERMANY_BOUNDS)
-    // maxBounds, nicht nur der Startausschnitt: sonst scrollt man heraus und
-    // steht vor leerem Raum, in dem es ohnehin keine Einträge gibt.
-    expect(options.maxBounds).toStrictEqual(MAP_MAX_BOUNDS)
+    expect(options.fitBoundsOptions).toStrictEqual({ padding: MAP_PADDING })
   })
 
   it('fits Germany again once the map has loaded', async () => {
@@ -104,9 +128,81 @@ describe('CommunityMap', () => {
     // Der Container hat beim Konstruieren oft noch nicht seine endgültige Größe;
     // ohne diesen zweiten Fit war der Süden Deutschlands abgeschnitten.
     expect(mapInstance.fitBounds).toHaveBeenCalledWith(GERMANY_BOUNDS, {
-      padding: 24,
+      padding: MAP_PADDING,
       animate: false,
     })
+  })
+
+  it('makes the Germany fit the point you cannot zoom out past', async () => {
+    await mountMap()
+
+    // Der Kern des Umbaus: „ganz herausgezoomt" heißt „Deutschland ist im
+    // Bild". Die Zahl kommt aus der Fenstergröße, weil sie nur so auf jedem
+    // Seitenverhältnis stimmt — vorher stand hier eine feste 4.
+    expect(mapInstance.setMinZoom).toHaveBeenCalledWith(minZoomForBounds(GERMANY_BOUNDS, VIEWPORT))
+  })
+
+  it('derives the frame it cannot be dragged out of', async () => {
+    await mountMap()
+
+    // Der Rahmen hält die Karte in der Gegend — aber abgeleitet, nicht fest:
+    // MapLibre setzt maxBounds notfalls durch Hineinzoomen durch, ein zu enger
+    // Rahmen wäre also heimlich die Zoomgrenze und würde den Fit oben
+    // aushebeln.
+    expect(mapInstance.setMaxBounds).toHaveBeenCalledWith(panFrameFor(GERMANY_BOUNDS, VIEWPORT))
+  })
+
+  it('recomputes both limits when the container changes size', async () => {
+    await mountMap()
+    const resize = mapInstance.on.mock.calls.find(
+      ([event]) => event === 'resize',
+    )?.[1] as () => void
+
+    // Ein Telefon im Querformat, und beim Scrollen zieht sich die Adressleiste
+    // zusammen: dieselbe Karte, ein anderes Seitenverhältnis, andere Grenzen.
+    const turned = { width: 844, height: 390 }
+    measureContainerAs(turned)
+    resize()
+
+    expect(mapInstance.setMinZoom).toHaveBeenLastCalledWith(
+      minZoomForBounds(GERMANY_BOUNDS, turned),
+    )
+    expect(mapInstance.setMaxBounds).toHaveBeenLastCalledWith(panFrameFor(GERMANY_BOUNDS, turned))
+  })
+
+  it('sets no limits it would have to guess', async () => {
+    // Ein Container ohne Maße — noch nicht im Layout oder eingeklappt. Eine aus
+    // 0 × 0 gerechnete Grenze wäre nicht bloß falsch, sie würde die Karte auf
+    // eine unbrauchbare Stufe zwingen.
+    measureContainerAs({ width: 0, height: 0 })
+    await mountMap()
+
+    expect(mapInstance.setMinZoom).not.toHaveBeenCalled()
+    expect(mapInstance.setMaxBounds).not.toHaveBeenCalled()
+  })
+
+  it('leaves the page scrolling when it is embedded in one', async () => {
+    await mountMap({ cooperativeGestures: true })
+
+    // Auf der Startseite füllt die Karte den Bildschirm mitten in einer
+    // scrollenden Seite. Ohne das fängt sie das Mausrad ab, und die Seite hört
+    // für den Besucher an ihrem oberen Rand auf.
+    const options = MapMock.mock.calls[0]?.[0] as Record<string, unknown>
+    expect(options.cooperativeGestures).toBe(true)
+    // Und der Hinweis dazu auf Deutsch — MapLibres eigener ist englisch und
+    // nur über `locale` zu ersetzen.
+    expect(options.locale).toMatchObject({
+      'CooperativeGesturesHandler.WindowsHelpText': 'Zum Zoomen Strg + Scrollen benutzen',
+    })
+  })
+
+  it('takes the whole page when nobody says otherwise', async () => {
+    await mountMap()
+
+    // Auf /karte ist die Karte die Seite; dort wäre die Rückfrage beim Zoomen
+    // eine Schikane.
+    const options = MapMock.mock.calls[0]?.[0] as Record<string, unknown>
+    expect(options.cooperativeGestures).toBe(false)
   })
 
   it('disables rotating and tilting', async () => {

@@ -9,6 +9,20 @@
      app/utils/mapStyle.ts, damit Karte und Seite nicht auseinanderlaufen. */
   --color-paper: oklch(0.94 0.017 78);
   --color-ink: oklch(0.29 0.011 62);
+  /* Gedämpfte Tusche für alles zweiter Ordnung: Fließtext, Ortsangaben,
+     Kapitälchen-Zeilen.
+
+     Eine eigene Farbe und nicht `text-ink/60`, wie es vorher an fünf Stellen
+     stand. Ein Alpha-Wert ist keine Farbe, sondern eine Rechnung gegen den
+     Untergrund — und die ging hier nicht auf: ink/60 über dem Papier ergibt
+     3,8:1 und verfehlt WCAG 1.4.3 (4,5:1) für Text dieser Größe. Der axe-Scan
+     hat es gemeldet, sobald die Liste auf der Startseite stand.
+
+     Für Neutraltöne ist die Leuchtdichte Y = L³, und 4,5:1 gegen das Papier
+     (Y = 0,846) verlangt Y ≤ 0,149, also L ≤ 0,53. Mit L = 0,51 stehen 4,9:1
+     auf dem Papier — gedämpft, aber lesbar. Wer den Wert anhebt, rechnet
+     bitte nach. */
+  --color-ink-muted: oklch(0.51 0.012 62);
   /* Die Helligkeiten sind nicht gegriffen, sondern gerechnet: bei L=0.52 kam
      Linktext auf 4.32:1 gegen das Papier und verfehlte WCAG 1.4.3 (4.5:1) —
      axe hat genau das gemeldet. L=0.48 ergibt 5.13:1, Weiß auf der Fläche
@@ -16,11 +30,143 @@
   --color-atlas: oklch(0.48 0.13 160);
   --color-atlas-dark: oklch(0.4 0.12 160);
 
+  /* Wiese und Wasser — für die gezeichnete Dorfansicht auf der Startseite.
+
+     Als Hex und nicht als oklch, obwohl der Rest dieser Datei oklch benutzt:
+     Diese beiden Werte müssen zeichengenau dieselben sein wie GREEN und WATER
+     in app/utils/mapStyle.ts. Eine umgerechnete Farbe, die „fast" stimmt, ist
+     genau die Art Abweichung, die man erst sieht, wenn Zeichnung und Karte im
+     Übergang übereinanderliegen — und dort liegen sie. */
+  --color-meadow: #e6e6d2;
+  --color-water: #cdd6d5;
+
   /* Eine Serife für Überschriften gibt dem Atlas seinen Buchcharakter.
      Bewusst nur Systemschriften: eine Webfont von Google wäre ein
      Drittanbieter-Request mit IP-Übertragung, und selbst gehostet kostet sie
      Ladezeit für einen Effekt, den diese Kaskade beinahe umsonst liefert. */
   --font-serif: ui-serif, Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+
+  /* Das Wippen des Hinweises auf die Karte.
+
+     Bewusst kleiner und langsamer als Tailwinds `animate-bounce`: Der Weg ist
+     6 Pixel und der Takt knapp drei Sekunden, mit einer Pause am oberen Ende.
+     Eine Bewegung, die auffällt, ohne zu zappeln — sie steht auf einer Seite,
+     die man liest, nicht auf einem Ladebalken. Die reduced-motion-Regel weiter
+     unten schaltet sie ganz ab. */
+  --animate-nudge: nudge 2.8s ease-in-out infinite;
+}
+
+@keyframes nudge {
+  0%,
+  55%,
+  100% {
+    transform: translateY(0);
+  }
+  78% {
+    transform: translateY(6px);
+  }
+}
+
+/*
+ * Der Übergang von der Zeichnung zur Karte, gesteuert vom Scrollstand.
+ *
+ * Die Zeichnung verblasst, während die Karte an ihrer Stelle aufklart — im
+ * selben klebenden Rahmen, gleicher Ausschnitt, gleiche Größe. Aus dem
+ * gedachten Dorf werden die wirklichen Orte. Das ist die ganze Idee der
+ * Startseite, und sie steckt in diesen zwanzig Zeilen.
+ *
+ * Ohne JavaScript und ohne Scroll-Listener: `animation-timeline` bindet den
+ * Fortschritt der Animation an den Weg eines Elements durchs Fenster. Der
+ * Taktgeber ist der Vorspann (`.reveal-hero`) und nicht die ganze Spur, weil
+ * seine Geometrie eindeutig ist — er ist genau fensterhoch und steht am Anfang
+ * der Seite, also läuft seine `exit`-Phase exakt über die erste Fensterhöhe
+ * Scrollweg. Nimmt man stattdessen die Spur, beginnt deren `cover`-Phase
+ * rechnerisch oberhalb des Dokuments, und der Übergang wäre beim Laden schon
+ * zu zwei Dritteln vorbei.
+ *
+ * `timeline-scope` am gemeinsamen Vorfahren: Ohne das findet die klebende
+ * Ebene den Namen nicht — sie steht *vor* dem Vorspann im Baum, und von dort
+ * aus ist er nicht sichtbar.
+ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal-track {
+      timeline-scope: --reveal;
+    }
+
+    .reveal-hero {
+      view-timeline-name: --reveal;
+    }
+
+    .reveal-drawing,
+    .reveal-map {
+      /* Langform, und `auto` ist der Grund dafür: Die Kurzschreibweise
+         `animation: linear both` setzt die Dauer stillschweigend auf 0s. Eine
+         scroll-gesteuerte Animation ist damit punktförmig — sie hat eine
+         Zeitleiste und einen Bereich, durchläuft ihn aber nie. Beide Ebenen
+         blieben deshalb auf voller Deckkraft stehen, und weil die Karte oben
+         liegt, sah man nur sie: der Übergang fehlte, ohne dass irgendetwas
+         einen Fehler gemeldet hätte. `auto` heißt „so lang wie der Bereich". */
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --reveal;
+      /* Nicht sofort und nicht bis zum Schluss: Die ersten Bildschirmzentimeter
+         gehören noch dem Vorspann, und am Ende soll die Karte einen Moment für
+         sich stehen, bevor der Text kommt. */
+      animation-range: exit 18% exit 78%;
+    }
+
+    .reveal-drawing {
+      animation-name: reveal-drawing;
+    }
+
+    .reveal-map {
+      animation-name: reveal-map;
+    }
+  }
+}
+
+@keyframes reveal-drawing {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes reveal-map {
+  from {
+    opacity: 0;
+  }
+}
+
+/*
+ * Der Satz, nicht die Farbe, trägt diese Seite — sie besteht fast nur aus Text.
+ * Was hier steht, gehört deshalb an den Grundtext und nicht in die Klassenliste
+ * jedes einzelnen Absatzes; eine Auszeichnung, die man vergessen kann, ist eine,
+ * die irgendwann irgendwo fehlt.
+ */
+body {
+  /* Ziffern in der Laufweite des Textes statt in Tabellenbreite: „6
+     Gemeinschaften" soll gesetzt aussehen und nicht gerechnet. */
+  font-variant-numeric: proportional-nums;
+  /* Deutsche Komposita sind lang. In einer schmalen Spalte reißt „Gemeinschafts-
+     forschung" sonst eine Lücke in die vorige Zeile — die Trennung ist hier
+     Typografie und nicht Kosmetik. Die Sprache steht am <html>-Element, sonst
+     trennt der Browser nach englischen Regeln. */
+  hyphens: auto;
+  text-wrap: pretty;
+}
+
+/*
+ * Überschriften werden umbrochen, nicht getrennt: eine Trennfuge in einer
+ * Zeile, die man als Ganzes liest, ist ein Stolperstein. `balance` verteilt
+ * stattdessen die Wörter gleichmäßig auf die Zeilen.
+ */
+h1,
+h2,
+h3 {
+  hyphens: manual;
+  text-wrap: balance;
 }
 
 /*

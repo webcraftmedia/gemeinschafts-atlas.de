@@ -82,25 +82,15 @@ export const communities: Community[] = [
 ]
 
 /**
- * Deutschland in WGS84, [[West, Süd], [Ost, Nord]]. Der Startausschnitt.
+ * Deutschland in WGS84, [[West, Süd], [Ost, Nord]].
+ *
+ * Der Startausschnitt — und seit dem Umbau auch das Maß für beide Schranken der
+ * Karte: die Zoom-Untergrenze und der Rahmen, aus dem sie sich nicht schieben
+ * lässt, werden daraus gerechnet (`~/utils/mapView`). Vorher stand daneben ein
+ * zweiter, von Hand gesetzter Rahmen, und die beiden liefen auseinander: er war
+ * so eng, dass MapLibre den Einpass auf Deutschland still übergehen musste.
  */
 export const GERMANY_BOUNDS: [[number, number], [number, number]] = [
   [5.87, 47.27],
   [15.04, 55.06],
-]
-
-/**
- * Der Rahmen, aus dem man nicht herausscrollen kann — bewusst großzügiger als
- * GERMANY_BOUNDS.
- *
- * Der Grund ist nicht Geschmack: MapLibre sorgt dafür, dass `maxBounds` nie
- * überschritten wird, und zoomt dafür notfalls *hinein*. Mit exakt dem
- * Deutschland-Rahmen füllt ein breites Fenster den Bildschirm mit der
- * Landesmitte, statt das Land zu zeigen — nachgemessen, das war der erste
- * Versuch. Der Puffer gibt dem Fit den Platz, den er braucht; dass dabei die
- * Nachbarländer angeschnitten werden, ist der Preis und schadet nichts.
- */
-export const MAP_MAX_BOUNDS: [[number, number], [number, number]] = [
-  [3.5, 45.5],
-  [17.5, 56.8],
 ]

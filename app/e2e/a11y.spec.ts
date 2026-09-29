@@ -21,6 +21,15 @@ test.describe('automated WCAG scan', () => {
     await expectNoNewA11yViolations(page, 'startseite')
   })
 
+  test('the list page', async ({ page }) => {
+    await page.goto('/liste')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    // Seit dem Umbau eine eigene Seite — und damit eine eigene Ansicht, die
+    // niemand scannte. Gerade sie ist die, auf die alle verwiesen werden, die
+    // die Karte nicht bedienen können.
+    await expectNoNewA11yViolations(page, 'liste')
+  })
+
   test('the map page', async ({ page }) => {
     await page.goto('/karte')
     // Erst scannen, wenn die Karte wirklich steht — vorher fehlt die Hälfte
@@ -48,6 +57,13 @@ test.describe('keyboard operation', () => {
   test('every link on the landing page is reachable by keyboard', async ({ page }) => {
     await page.goto('/')
 
+    // Erst die Karte einhängen lassen, dann zählen. Sie hydratisiert in der
+    // Leerlaufzeit nach dem ersten Aufbau und bringt eigene Links mit (Logo,
+    // Attribution). Wer vorher zählt, arbeitet eine Liste ab, die sich unter
+    // ihm verschiebt: `nth(4)` meint nach dem Fokussieren ein anderes Element
+    // als davor, und der Test scheitert an sich selbst statt an der Seite.
+    await expect(page.locator('.maplibregl-canvas')).toBeVisible()
+
     const links = await page.getByRole('link').all()
     expect(links.length).toBeGreaterThan(0)
     for (const link of links) {
@@ -61,9 +77,13 @@ test.describe('keyboard operation', () => {
 
     // Der Weg an der Karte vorbei. Ohne ihn wäre die Seite für Tastatur- und
     // Screenreader-Nutzer eine Sackgasse — die Karte selbst ist Pixel auf einer
-    // Canvas und für sie nicht bedienbar.
-    await page.getByRole('link', { name: 'Als Liste' }).click()
-    await expect(page.getByRole('heading', { name: 'Alle Gemeinschaften' })).toBeVisible()
+    // Canvas und für sie nicht bedienbar. Seit dem Umbau führt er auf eine
+    // eigene Seite statt zu einem Anker; geprüft wird deshalb auch, dass man
+    // dort wirklich ankommt.
+    await page.getByRole('link', { name: 'Als Liste', exact: true }).click()
+    await expect(page).toHaveURL('/liste')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Alle Gemeinschaften')
+    await expect(page.getByText('Ökodorf Sieben Linden')).toBeVisible()
   })
 
   test('the map markers are not in the tab order', async ({ page }) => {

@@ -21,13 +21,19 @@
       >
         {{ t('app.brand') }}
       </NuxtLink>
+      <!--
+        Kein Sprungziel mehr, sondern eine Adresse: Die Liste ist seit dem
+        Umbau eine eigene Seite. Für alle, die die Karte nicht bedienen können,
+        ist dieser Link der Weg zum gleichwertigen Angebot — er steht deshalb
+        in der Leiste und nicht irgendwo unten.
+      -->
       <nav class="pointer-events-auto" :aria-label="t('app.nav-label')">
-        <a
-          href="#liste"
+        <NuxtLink
+          to="/liste"
           class="rounded-full bg-paper/90 px-4 py-2 text-sm shadow-sm ring-1 ring-ink/10 backdrop-blur hover:bg-paper"
         >
           {{ t('app.to-list') }}
-        </a>
+        </NuxtLink>
       </nav>
     </header>
 

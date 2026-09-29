@@ -17,7 +17,11 @@ describe('map layout', () => {
     // Sackgasse — besonders für Tastaturnutzer, die die Karte selbst nicht
     // bedienen können.
     expect(wrapper.get('a[href="/"]').text()).toBe('Gemeinschafts-Atlas')
-    expect(wrapper.get('a[href="#liste"]').text()).toBe('Als Liste')
+    // Seit dem Umbau eine Adresse statt eines Sprungziels: Die Liste ist eine
+    // eigene Seite. Für alle, die die Karte nicht bedienen können, ist dieser
+    // Link der Weg zum gleichwertigen Angebot — bleibt er hier hängen, ist die
+    // Kartenseite für sie eine Sackgasse.
+    expect(wrapper.get('a[href="/liste"]').text()).toBe('Als Liste')
   })
 
   it('lets pointer events through the empty parts of the floating bar', async () => {

@@ -7,8 +7,13 @@
    * Eine WebGL-Karte ist per Tastatur kaum und per Screenreader gar nicht
    * bedienbar: Marker sind Pixel auf einer Canvas. Eine gleichwertige Liste ist
    * deshalb das, was Barrierefreiheit hier konkret bedeutet (BFSG/WCAG 1.1.1
-   * und 2.1.1). Nebenbei ist sie das Einzige, was Suchmaschinen von dieser
-   * Seite indizieren können.
+   * und 2.1.1). Nebenbei ist sie das Einzige, was Suchmaschinen von diesen
+   * Daten indizieren können.
+   *
+   * Nur die Liste selbst, ohne Überschrift und ohne Abschnitt: Seit sie unter
+   * `/liste` eine eigene Seite hat, ist die Überschrift deren `h1` und gehört
+   * dorthin. Eine Komponente, die ihre eigene Überschriftenebene mitbringt,
+   * passt immer nur an eine Stelle.
    */
   defineProps<{ communities: Community[] }>()
 
@@ -22,30 +27,19 @@
 </script>
 
 <template>
-  <section id="liste" class="bg-paper px-4 py-16">
-    <div class="mx-auto max-w-2xl">
-      <h2 class="font-serif text-2xl">{{ t('components.CommunityList.heading') }}</h2>
-      <p class="mt-2 text-ink/70">{{ t('components.CommunityList.intro') }}</p>
-
-      <ul class="mt-8 space-y-8">
-        <li
-          v-for="community in communities"
-          :key="community.id"
-          class="border-t border-ink/10 pt-6"
-        >
-          <h3 class="font-serif text-xl">{{ community.name }}</h3>
-          <p class="text-sm text-ink/60">{{ community.place }}</p>
-          <p class="mt-2">{{ community.purpose }}</p>
-          <p v-if="community.guests" class="mt-2 text-sm font-medium text-atlas-dark">
-            {{ t('components.CommunityList.guests') }}
-          </p>
-          <p class="mt-3 text-sm">
-            <AppLink :to="osmUrl(community)">
-              {{ t('components.CommunityList.osm') }}
-            </AppLink>
-          </p>
-        </li>
-      </ul>
-    </div>
-  </section>
+  <ul class="space-y-8">
+    <li v-for="community in communities" :key="community.id" class="border-t border-ink/10 pt-6">
+      <h2 class="font-serif text-xl">{{ community.name }}</h2>
+      <p class="text-sm text-ink-muted">{{ community.place }}</p>
+      <p class="mt-2">{{ community.purpose }}</p>
+      <p v-if="community.guests" class="mt-2 text-sm font-medium text-atlas-dark">
+        {{ t('components.CommunityList.guests') }}
+      </p>
+      <p class="mt-3 text-sm">
+        <AppLink :to="osmUrl(community)">
+          {{ t('components.CommunityList.osm') }}
+        </AppLink>
+      </p>
+    </li>
+  </ul>
 </template>
