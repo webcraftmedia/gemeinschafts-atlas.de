@@ -104,6 +104,14 @@ test.describe('the deployed app', () => {
     await expect(imprint).toHaveAttribute('rel', 'noopener noreferrer')
   })
 
+  test('links the privacy policy to the operator', async ({ page }) => {
+    await page.goto('/')
+
+    const privacy = page.getByRole('link', { name: /Datenschutz/ })
+    await expect(privacy).toHaveAttribute('href', 'https://webcraft-media.de/#!datenschutz')
+    await expect(privacy).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+
   test('actually renders map tiles, not just a canvas', async ({ page }) => {
     const failed: string[] = []
     const tiles: number[] = []

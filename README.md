@@ -147,16 +147,17 @@ GitHub-Webhook auf veröffentlichte Releases. Einrichtung und Ablauf:
 
 ## Offene Punkte vor dem ersten öffentlichen Deployment
 
-- Datenschutzerklärung anlegen — sobald irgendetwas personenbezogene Daten
-  verarbeitet, ist sie Pflicht. Bis dahin bleibt die Angriffsfläche klein:
-  keine Cookies, keine Schriften von Dritten, und die Kacheln kommen von
-  OpenFreeMap ohne Tracking (siehe [docs/karte.md](docs/karte.md)) — die
-  IP-Adresse geht dabei trotzdem dorthin und gehört in die Erklärung.
+- Die verlinkte Datenschutzerklärung der Betreiberin muss den Atlas abdecken.
+  Die Angriffsfläche ist klein: keine Cookies, keine Schriften von Dritten, und
+  die Kacheln kommen von OpenFreeMap ohne Tracking (siehe
+  [docs/karte.md](docs/karte.md)) — die IP-Adresse geht dabei trotzdem dorthin,
+  auf jeder Seite, und gehört in die Erklärung.
 - `NUXT_PUBLIC_SITE_URL` und `NUXT_PUBLIC_CONTACT_EMAIL` in der `.env` des
   Servers setzen.
 - Die Einträge in `app/app/data/communities.ts` sind Platzhalter: reale Projekte,
   aber ungeprüfte Koordinaten und Beschreibungen. Vor der Veröffentlichung mit
   den Gemeinschaften abgleichen.
 
-Das Impressum liegt bewusst nicht im Repo: die Fußzeile verlinkt das der
-Betreiberin, konfigurierbar über `NUXT_PUBLIC_IMPRINT_URL`.
+Impressum und Datenschutzerklärung liegen bewusst nicht im Repo: die Fußzeile
+verlinkt die der Betreiberin, konfigurierbar über `NUXT_PUBLIC_IMPRINT_URL` und
+`NUXT_PUBLIC_PRIVACY_URL`.
