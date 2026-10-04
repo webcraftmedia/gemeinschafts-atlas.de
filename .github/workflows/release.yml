@@ -17,7 +17,7 @@ jobs:
         with:
           app-id: ${{ vars.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         with:
           manifest-file: .release-please-manifest.json
           config-file: release-please-config.json
