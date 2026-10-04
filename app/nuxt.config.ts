@@ -52,6 +52,8 @@ export default defineNuxtConfig({
       contactEmail: process.env.NUXT_PUBLIC_CONTACT_EMAIL || 'kontakt@gemeinschafts-atlas.de',
       // Das Impressum der Betreiberin, extern verlinkt.
       imprintUrl: process.env.NUXT_PUBLIC_IMPRINT_URL || 'https://webcraft-media.de/#!impressum',
+      // Die Datenschutzerklärung der Betreiberin, ebenfalls extern verlinkt.
+      privacyUrl: process.env.NUXT_PUBLIC_PRIVACY_URL || 'https://webcraft-media.de/#!datenschutz',
       // Vector-Tiles für die Karte. OpenFreeMap: kein Key, keine Registrierung,
       // keine Cookies, keine Limits, EU-Hosting. Konfigurierbar, damit ein
       // Umzug auf selbst gehostete PMTiles eine URL-Änderung bleibt und kein
